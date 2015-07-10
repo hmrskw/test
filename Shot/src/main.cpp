@@ -1,5 +1,10 @@
 ﻿#include "lib/framework.hpp"
 #include <iostream>
+
+#define SPEED 7
+#define BULLETNUM 3
+#define BULLETSPEED 10
+
 class App{
 private:
 	App(){}
@@ -13,7 +18,7 @@ public:
 class Player {
 private:
 	enum vecter{
-		RIGHT,LEFT
+		RIGHT = 1,LEFT = -1
 	};
 	struct Obj{
 		Vec2f pos;
@@ -21,52 +26,54 @@ private:
 	};
 
 	Texture player;
-	int directon;
+	int direction;
 	int shotNum;
-	bool flag[3];
+	bool flag[BULLETNUM];
 	Obj character;
-	Obj bullet[3];
+	Obj bullet[BULLETNUM];
 
 public:
 	Player(){
 		player = Texture("res/player.png");
 		character.pos = Vec2f(0, 0);
-		directon = LEFT;
+		direction = LEFT;
 		shotNum = 0;
-		for (int i = 0; i < 3; i++){
+		for (int i = 0; i < BULLETNUM; i++){
 			flag[i] = true;
-			bullet[i].pos = Vec2f(0, 0);
+			bullet[i].pos = Vec2f(1000, 1000);
 			bullet[i].dir = 0;
 		}
 	}
 
 	void getKey(){
 		if (App::get().isPressKey('A')){
-			directon = LEFT;
-			character.pos.x() -= 5;
+			direction = LEFT;
+			character.pos.x() -= SPEED;
 		}
 		if (App::get().isPressKey('D')){
-			directon = RIGHT;
-			character.pos.x() += 5;
+			direction = RIGHT;
+			character.pos.x() += SPEED;
 		}
 		if (App::get().isPressKey('W')){
-			character.pos.y() += 5;
+			character.pos.y() += SPEED;
 		}
 		if (App::get().isPressKey('S')){
-			character.pos.y() -= 5;
+			character.pos.y() -= SPEED;
 		}
+
 		if (App::get().isPushKey(GLFW_KEY_SPACE) && flag[shotNum]){
-			if (shotNum == 3)shotNum = 0;
+			if (shotNum == BULLETNUM)shotNum = 0;
 			bullet[shotNum].pos = character.pos;
-			bullet[shotNum].dir = (directon == LEFT) ? -10 : 10;
+			bullet[shotNum].pos.x() += (player.width() / 2)*character.dir;
+			bullet[shotNum].dir = direction*BULLETSPEED;
 			flag[shotNum] = false;
 			shotNum++;
 		}
-		character.dir = directon == LEFT ? -128 : 128;
+		character.dir = direction;
 	}
 
 	void shot(){
-		for (int i = 0; i < 3; i++){
+		for (int i = 0; i < BULLETNUM; i++){
 			bullet[i].pos.x() += bullet[i].dir;
 			if (abs(bullet[i].pos.x()) > 320){
 				flag[i] = true;
@@ -75,9 +82,16 @@ public:
 	}
 
 	void draw(){
-		drawTextureBox(character.pos.x(), character.pos.y(), 128, 256, 0, 0, character.dir, 256, player, Color::white);
-		for (int i = 0; i < 3;i++){
-			drawFillCircle(bullet[i].pos.x(), bullet[i].pos.y(), 10, 10, 10, Color::yellow);
+		drawTextureBox(character.pos.x(), character.pos.y(),
+					   player.width(), player.height(),
+					   0, 0,
+					   player.width(), player.height(),
+					   player, Color::black,
+					   0,Vec2f(character.dir,1),Vec2f(64,100));
+
+		for (int i = 0; i < BULLETNUM; i++){
+			drawFillCircle(bullet[i].pos.x(), bullet[i].pos.y(),
+				10, 10, 10, Color::yellow);
 		}
 	}
 };
@@ -85,6 +99,8 @@ public:
 int main() {
 	App::get();
 	Player player;
+
+	App::get().bgColor(Color::white);
 	while (App::get().isOpen()) {
 		App::get().begin();
 
